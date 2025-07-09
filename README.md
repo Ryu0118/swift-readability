@@ -24,9 +24,7 @@ Easily integrate with WKWebView.
 Easily toggle a reader overlay with customizable themes and font sizes.
 
 ## Requirements
-
-- **Swift:** 6.0 or later
-- **Xcode:** 16.0 or later
+- **Xcode:** 16.4 or later
 
 ## Installation
 swift-readability is available via the Swift Package Manager
@@ -117,12 +115,7 @@ If you are using a SwiftUI wrapper library for WKWebView (such as [Cybozu/WebUI]
 import WebUI
 import ReadabilityUI
 
-extension WebViewProxy: @retroactive ReaderControllable {
-    public func evaluateJavaScript(_ javascriptString: String) async throws -> Any {
-        let result: Any? = try await evaluateJavaScript(javascriptString)
-        return result ?? ()
-    }
-}
+extension WebViewProxy: @retroactive ReaderControllable {}
 ```
 By conforming `WebViewProxy` to `ReaderControllable`, you can control the reader from the proxy, for example:
 ```swift

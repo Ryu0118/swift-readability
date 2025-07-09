@@ -11,7 +11,7 @@ public protocol ReaderControllable {
     /// - Parameter javascriptString: The JavaScript code to evaluate.
     /// - Returns: The result of the JavaScript evaluation.
     /// - Throws: An error if the evaluation fails.
-    func evaluateJavaScript(_ javascriptString: String) async throws -> Any
+    func evaluateJavaScript(_ javascriptString: String) async throws -> Any?
 }
 
 public extension ReaderControllable {
