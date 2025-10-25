@@ -18,7 +18,7 @@ public struct ReadabilityResult: Decodable, Sendable {
     /// The name of the site where the article originated.
     public let siteName: String?
     /// The language of the article.
-    public let language: String
+    public let language: String?
     /// The text direction (e.g., "ltr", "rtl") of the article, if available.
     public let direction: String?
     /// The published time of the article, if available.

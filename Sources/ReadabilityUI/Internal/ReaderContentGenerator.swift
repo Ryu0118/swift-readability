@@ -36,7 +36,7 @@ struct ReaderContentGenerator: ReaderContentGeneratable {
             .replacingOccurrences(of: "%READER-TITLE%", with: readabilityResult.title)
             .replacingOccurrences(of: "%READER-BYLINE%", with: readabilityResult.byline ?? "")
             .replacingOccurrences(of: "%READER-CONTENT%", with: readabilityResult.content)
-            .replacingOccurrences(of: "%READER-LANGUAGE%", with: readabilityResult.language)
+            .replacingOccurrences(of: "%READER-LANGUAGE%", with: readabilityResult.language ?? "en")
             .replacingOccurrences(of: "%READER-DIRECTION%", with: readabilityResult.direction ?? "auto")
     }
 }
