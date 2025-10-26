@@ -29,7 +29,7 @@ Easily toggle a reader overlay with customizable themes and font sizes.
 ## Installation
 swift-readability is available via the Swift Package Manager
 ```Swift
-.package(url: "https://github.com/Ryu0118/swift-readability", exact: "0.1.0")
+.package(url: "https://github.com/Ryu0118/swift-readability", exact: "0.3.0")
 ```
 
 ## Usage
