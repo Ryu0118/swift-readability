@@ -51,20 +51,56 @@ final class ReadabilityRunner {
         webView.loadHTMLString(html, baseURL: baseURL)
 
         return try await withCheckedThrowingContinuation { [weak self] continuation in
+            let resolver = ParseResolver(continuation: continuation) { [weak self] in
+                self?.messageHandler?.subscribeEvent(nil)
+            }
+
             self?.messageHandler?.subscribeEvent { event in
                 switch event {
                 case let .contentParsed(readabilityResult):
-                    continuation.resume(returning: readabilityResult)
-                    self?.messageHandler?.subscribeEvent(nil)
+                    resolver.resolve(.success(readabilityResult))
                 case let .availabilityChanged(availability):
                     if availability == .unavailable {
-                        continuation.resume(throwing: Error.readerIsUnavailable)
-                        self?.messageHandler?.subscribeEvent(nil)
+                        resolver.failIfNoContentArrives(withinSeconds: 2,
+                                                        with: Error.readerIsUnavailable)
                     }
                 default:
                     break
                 }
             }
+        }
+    }
+}
+
+@MainActor
+private final class ParseResolver {
+    private var continuation: CheckedContinuation<ReadabilityResult, Swift.Error>?
+    private var graceTask: Task<Void, Never>?
+    private let onFinish: () -> Void
+
+    init(
+        continuation: CheckedContinuation<ReadabilityResult, Swift.Error>,
+        onFinish: @escaping () -> Void
+    ) {
+        self.continuation = continuation
+        self.onFinish = onFinish
+    }
+
+    func resolve(_ outcome: Result<ReadabilityResult, Swift.Error>) {
+        guard let continuation else { return }
+        self.continuation = nil
+        graceTask?.cancel()
+        graceTask = nil
+        onFinish()
+        continuation.resume(with: outcome)
+    }
+
+    func failIfNoContentArrives(withinSeconds seconds: Double, with error: Swift.Error) {
+        guard continuation != nil, graceTask == nil else { return }
+        graceTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+            self?.resolve(.failure(error))
         }
     }
 }
