@@ -20,6 +20,8 @@ package final class ReadabilityMessageHandler<Generator: ReaderContentGeneratabl
         case contentParsed(readabilityResult: ReadabilityResult)
         /// The availability status of the reader changed.
         case availabilityChanged(availability: ReaderAvailability)
+        /// The parse produced no usable content (a `null`/undecodable result from the page script).
+        case contentParseFailed
     }
 
     // The generator used to produce reader HTML from the readability result.
@@ -62,6 +64,8 @@ package final class ReadabilityMessageHandler<Generator: ReaderContentGeneratabl
                     case .generateReadabilityResult:
                         await self?.eventHandler?(.contentParsed(readabilityResult: result))
                     }
+                } else {
+                    await self?.eventHandler?(.contentParseFailed)
                 }
             }
         }
