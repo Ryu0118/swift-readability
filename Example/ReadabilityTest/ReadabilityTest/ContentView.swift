@@ -1,16 +1,17 @@
-import Readability
 import SwiftUI
-import WebKit
-import WebUI
 
 struct ContentView: View {
     var body: some View {
         NavigationStack {
             List {
-                NavigationLink("ReaderTextView") {
+                NavigationLink("ReaderTextView", value: ExampleDestination.readerTextView)
+                NavigationLink("ReaderWebView", value: ExampleDestination.readerWebView)
+            }
+            .navigationDestination(for: ExampleDestination.self) { destination in
+                switch destination {
+                case .readerTextView:
                     ReaderTextView()
-                }
-                NavigationLink("ReaderWebView") {
+                case .readerWebView:
                     ReaderWebView()
                 }
             }
