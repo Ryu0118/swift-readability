@@ -9,9 +9,9 @@ on:
 
 jobs:
   build:
-    runs-on: macos-15
+    runs-on: xcode-27
     env:
-      DEVELOPER_DIR: "/Applications/Xcode_16.4.app/Contents/Developer"
+      DEVELOPER_DIR: "/Applications/Xcode_27.0.app/Contents/Developer"
 
     steps:
     - uses: actions/checkout@v4
