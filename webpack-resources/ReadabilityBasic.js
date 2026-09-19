@@ -11,9 +11,14 @@ if(isProbablyReaderable(document)) {
 }
 
 var documentClone = document.cloneNode(true);
-const readabilityResult = new Readability(
-    documentClone,
-    __READABILITY_OPTION__
-).parse();
+var readabilityResult;
+try {
+    readabilityResult = new Readability(
+        documentClone,
+        __READABILITY_OPTION__
+    ).parse();
+} catch (e) {
+    readabilityResult = null;
+}
 
 webkit.messageHandlers.readabilityMessageHandler.postMessage({Type: "ContentParsed", Value: JSON.stringify(readabilityResult)});

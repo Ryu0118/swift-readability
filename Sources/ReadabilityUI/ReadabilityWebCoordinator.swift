@@ -78,7 +78,7 @@ public final class ReadabilityWebCoordinator: ObservableObject {
                 self?.availabilityChangedContinuation.yield(availability)
             case let .contentParsedAndGeneratedHTML(html: html):
                 self?.contentParsedContinuation.yield(html)
-            case .contentParsed:
+            case .contentParsed, .contentParseFailed:
                 break
             }
         }

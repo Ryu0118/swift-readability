@@ -18,7 +18,12 @@ var docStr = new XMLSerializer().serializeToString(document);
 const DOMPurify = require('dompurify');
 const clean = DOMPurify.sanitize(docStr, {WHOLE_DOCUMENT: true});
 var doc = new DOMParser().parseFromString(clean, "text/html");
-var readability = new Readability(doc, __READABILITY_OPTION__);
-const readabilityResult = readability.parse();
+var readabilityResult;
+try {
+    var readability = new Readability(doc, __READABILITY_OPTION__);
+    readabilityResult = readability.parse();
+} catch (e) {
+    readabilityResult = null;
+}
 
 webkit.messageHandlers.readabilityMessageHandler.postMessage({Type: "ContentParsed", Value: JSON.stringify(readabilityResult)});
