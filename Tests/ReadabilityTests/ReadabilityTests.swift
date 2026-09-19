@@ -126,7 +126,7 @@ struct ReadabilityRunnerIntegrationTests {
 
         func makeHTML(title: String) -> String {
             """
-            <html><body><article>
+            <html><head><title>\(title)</title></head><body><article>
             <h1>\(title)</h1>
             <p>\(String(repeating: "Enough content to be parsed by Readability. ", count: 20))</p>
             </article></body></html>
