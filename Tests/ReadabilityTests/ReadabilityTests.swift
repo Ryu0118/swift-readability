@@ -90,17 +90,14 @@ struct ReadabilityRunnerIntegrationTests {
     }
 
     @Test
-    func emptyDocumentThrowsQuicklyRatherThanWaitingOutTheDeadline() async throws {
-        let start = ContinuousClock.now
+    func emptyDocumentThrows() async throws {
+        // That an undecodable parse resolves promptly (rather than waiting out the
+        // 10s deadline) is covered at the unit level by ParseResolverTests, where
+        // process launch time can't confound the timing. This only checks that the
+        // runner routes an empty document to a thrown error at all.
         await #expect(throws: (any Swift.Error).self) {
             _ = try await Readability().parse(html: "<html><body></body></html>", options: nil, baseURL: nil)
         }
-        // The deadline is 10s; a decode failure should resolve well before it times
-        // out rather than waiting it out. The margin here is deliberately generous
-        // (rather than e.g. asserting sub-second) because CI simulators launching
-        // several concurrent WebContent processes can be considerably slower than a
-        // local run.
-        #expect(start.duration(to: .now) < .seconds(9))
     }
 
     @Test
