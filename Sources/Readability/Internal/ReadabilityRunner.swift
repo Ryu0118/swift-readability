@@ -7,28 +7,20 @@ import WebKit
 /// This class uses a WKWebView to load HTML and execute JavaScript for parsing.
 @MainActor
 final class ReadabilityRunner {
-    private let webView: WKWebView
-
-    // The message handler that listens for events from the injected JavaScript.
-    private weak var messageHandler: ReadabilityMessageHandler<EmptyContentGenerator>?
     // The script loader for fetching JavaScript resources from the bundle.
     private let scriptLoader = ScriptLoader(bundle: .module)
 
     private let encoder = JSONEncoder()
 
-    init() {
-        let configuration = WKWebViewConfiguration()
-        let messageHandler = ReadabilityMessageHandler(
-            mode: .generateReadabilityResult,
-            readerContentGenerator: EmptyContentGenerator()
-        )
+    init() {}
 
-        configuration.userContentController.add(messageHandler, name: "readabilityMessageHandler")
-
-        self.messageHandler = messageHandler
-        webView = WKWebView(frame: .zero, configuration: configuration)
-    }
-
+    /// Parses `html` using a dedicated `WKWebView` for this call.
+    ///
+    /// A fresh web view is created per call (rather than reused across calls) so that
+    /// concurrent `parseHTML` invocations on the same `ReadabilityRunner` don't race:
+    /// a shared web view would have its in-flight navigation cancelled by a second
+    /// `loadHTMLString`, and its accumulated user scripts (each carrying that call's
+    /// own `__READABILITY_OPTION__` substitution) would leak into later parses.
     func parseHTML(
         _ html: String,
         options: Readability.Options?,
@@ -42,18 +34,28 @@ final class ReadabilityRunner {
                 with: generateJSONOptions(options: options)
             )
 
+        let configuration = WKWebViewConfiguration()
+        let messageHandler = ReadabilityMessageHandler(
+            mode: .generateReadabilityResult,
+            readerContentGenerator: EmptyContentGenerator()
+        )
+        configuration.userContentController.add(messageHandler, name: "readabilityMessageHandler")
+
         let endScript = WKUserScript(
             source: script,
             injectionTime: .atDocumentEnd,
             forMainFrameOnly: true
         )
+        configuration.userContentController.addUserScript(endScript)
 
-        webView.configuration.userContentController.addUserScript(endScript)
+        let webView = WKWebView(frame: .zero, configuration: configuration)
         webView.loadHTMLString(html, baseURL: baseURL)
 
-        return try await withCheckedThrowingContinuation { [weak self] continuation in
-            let resolver = ParseResolver(continuation: continuation) { [weak self] in
-                self?.messageHandler?.subscribeEvent(nil)
+        return try await withCheckedThrowingContinuation { continuation in
+            // Keep the web view and message handler alive for the duration of the
+            // continuation: both are otherwise unowned once this function returns.
+            let resolver = ParseResolver(continuation: continuation, keepAlive: (webView, messageHandler)) {
+                messageHandler.subscribeEvent(nil)
             }
 
             // `isProbablyReaderable` is only a hint the page script emits before it
@@ -63,7 +65,7 @@ final class ReadabilityRunner {
             // (e.g. the injected script fails to run) still resolves.
             resolver.armDeadline(withinSeconds: Self.parseDeadline, with: Error.readerIsUnavailable)
 
-            self?.messageHandler?.subscribeEvent { event in
+            messageHandler.subscribeEvent { event in
                 switch event {
                 case let .contentParsed(readabilityResult):
                     resolver.resolve(.success(readabilityResult))
@@ -92,12 +94,16 @@ final class ParseResolver {
     private var continuation: CheckedContinuation<ReadabilityResult, Swift.Error>?
     private var deadlineTask: Task<Void, Never>?
     private let onFinish: () -> Void
+    // Retained only so the web view and message handler outlive this call; never read.
+    private var keepAlive: (WKWebView, AnyObject)?
 
     init(
         continuation: CheckedContinuation<ReadabilityResult, Swift.Error>,
+        keepAlive: (WKWebView, AnyObject),
         onFinish: @escaping () -> Void
     ) {
         self.continuation = continuation
+        self.keepAlive = keepAlive
         self.onFinish = onFinish
     }
 
