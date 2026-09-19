@@ -78,7 +78,15 @@ public final class ReadabilityWebCoordinator: ObservableObject {
                 self?.availabilityChangedContinuation.yield(availability)
             case let .contentParsedAndGeneratedHTML(html: html):
                 self?.contentParsedContinuation.yield(html)
-            case .contentParsed, .contentParseFailed:
+            case .contentParseFailed:
+                // The page script's `isProbablyReaderable` verdict can say `.available`
+                // and still fail to produce usable content (a `null`/undecodable parse).
+                // Without this, callers only watching `contentParsed` would wait forever
+                // for an HTML string that never arrives. Surface it as `.unavailable` so
+                // `availabilityChanged` remains the single source of truth for whether
+                // reader content is (or isn't) coming.
+                self?.availabilityChangedContinuation.yield(.unavailable)
+            case .contentParsed:
                 break
             }
         }
