@@ -64,6 +64,11 @@ private enum TestError: Swift.Error, Equatable {
     case timedOut
 }
 
+// Serialized rather than parallel: each test spins up its own WKWebView, and all
+// four running concurrently on a resource-constrained CI runner (e.g. GitHub
+// Actions' xcode-27 preview image) can starve WebContent/GPU/Networking process
+// launches badly enough to blow through parseDeadline on an otherwise-passing test.
+@Suite(.serialized)
 @MainActor
 struct ReadabilityRunnerIntegrationTests {
     // Reproduces the PR #7 repro: a short intro paragraph, a list of links, and one
