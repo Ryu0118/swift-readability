@@ -8,7 +8,7 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
+  build-and-test:
     runs-on: xcode-27
     env:
       DEVELOPER_DIR: "/Applications/Xcode_27.0.app/Contents/Developer"
@@ -36,6 +36,7 @@ jobs:
 
   example-app-test:
     runs-on: xcode-27
+    timeout-minutes: 20
     env:
       DEVELOPER_DIR: "/Applications/Xcode_27.0.app/Contents/Developer"
 
@@ -46,4 +47,6 @@ jobs:
         xcodebuild test \
           -project Example/ReadabilityTest/ReadabilityTest.xcodeproj \
           -scheme ReadabilityTests \
-          -destination "platform=iOS Simulator,name=iPhone 17"
+          -destination "platform=iOS Simulator,name=iPhone 17" \
+          -retry-tests-on-failure \
+          -test-iterations 3

@@ -64,6 +64,11 @@ private enum TestError: Swift.Error, Equatable {
     case timedOut
 }
 
+// Serialized rather than parallel: each test spins up its own WKWebView, and all
+// four running concurrently on a resource-constrained CI runner (e.g. GitHub
+// Actions' xcode-27 preview image) can starve WebContent/GPU/Networking process
+// launches badly enough to blow through parseDeadline on an otherwise-passing test.
+@Suite(.serialized)
 @MainActor
 struct ReadabilityRunnerIntegrationTests {
     // Reproduces the PR #7 repro: a short intro paragraph, a list of links, and one
@@ -90,13 +95,14 @@ struct ReadabilityRunnerIntegrationTests {
     }
 
     @Test
-    func emptyDocumentThrowsQuicklyRatherThanWaitingOutTheDeadline() async throws {
-        let start = ContinuousClock.now
+    func emptyDocumentThrows() async throws {
+        // That an undecodable parse resolves promptly (rather than waiting out the
+        // 10s deadline) is covered at the unit level by ParseResolverTests, where
+        // process launch time can't confound the timing. This only checks that the
+        // runner routes an empty document to a thrown error at all.
         await #expect(throws: (any Swift.Error).self) {
             _ = try await Readability().parse(html: "<html><body></body></html>", options: nil, baseURL: nil)
         }
-        // The deadline is 10s; a decode failure should resolve near-instantly instead.
-        #expect(start.duration(to: .now) < .seconds(5))
     }
 
     @Test
