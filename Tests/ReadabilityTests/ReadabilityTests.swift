@@ -95,8 +95,12 @@ struct ReadabilityRunnerIntegrationTests {
         await #expect(throws: (any Swift.Error).self) {
             _ = try await Readability().parse(html: "<html><body></body></html>", options: nil, baseURL: nil)
         }
-        // The deadline is 10s; a decode failure should resolve near-instantly instead.
-        #expect(start.duration(to: .now) < .seconds(5))
+        // The deadline is 10s; a decode failure should resolve well before it times
+        // out rather than waiting it out. The margin here is deliberately generous
+        // (rather than e.g. asserting sub-second) because CI simulators launching
+        // several concurrent WebContent processes can be considerably slower than a
+        // local run.
+        #expect(start.duration(to: .now) < .seconds(9))
     }
 
     @Test
